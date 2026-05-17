@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abizar Farm - Hewan Qurban Berkualitas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        html { scroll-behavior: smooth; }
+        .hero-gradient {
+            background: linear-gradient(rgba(6, 78, 59, 0.8), rgba(6, 78, 59, 0.6)), url('https://images.unsplash.com/photo-1484557985045-edf25e08da73?auto=format&fit=crop&q=80&w=1600');
+            background-size: cover;
+            background-position: center;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+    <script>
+        function abizarApp() {
+            return {
+                isMenuOpen: false,
+                contactNumber: '628817891076',
+                aiQuery: '',
+                aiResponse: '',
+                isAiLoading: false,
+                aiError: '',
+                
+                // State untuk Pratinjau Gambar
+                previewImage: null,
+                
+                selectedCategoryIndex: 0,
+                categoryActiveSlides: [0, 0, 0, 0, 0, 0, 0],
+
+                categories: [
+                    { id: 'kategori-1', name: 'Kategori 1', info: 'Domba nomor urut : 1-10', icon: 'badge-percent' },
+                    { id: 'kategori-2', name: 'Kategori 2', info: 'Domba nomor urut : 11-20', icon: 'shield' },
+                    { id: 'kategori-3', name: 'Kategori 3', info: 'Domba nomor urut : 21-30', icon: 'star' },
+                    { id: 'kategori-4', name: 'Kategori 4', info: 'Domba nomor urut : 31-40', icon: 'zap' },
+                    { id: 'kategori-5', name: 'Kategori 5', info: 'Domba nomor urut : 41-50', icon: 'crown' },
+                    { id: 'kategori-6', name: 'Kategori 6', info: 'Domba nomor urut : 51-60', icon: 'gem' },
+                    { id: 'kategori-7', name: 'Kategori 7', info: 'Domba nomor urut : 61-70', icon: 'trophy' }
+                ],
+
+                get categorizedProducts() {
+                    const priceMaps = {
+                        'kategori-1': [3500000, 3200000, 3000000, 3000000, 2700000, 2700000, 2800000, 2800000, 2700000, 3200000],
+                        'kategori-2': [2500000, 2500000, 3200000, 3200000, 3200000, 3200000, 2700000, 2800000, 3000000, 3000000],
+                        'kategori-3': [2800000, 2800000, 2800000, 2800000, 3200000, 2700000, 2800000, 3200000, 3200000, 3200000],
+                        'kategori-4': [3200000, 3200000, 3500000, 2700000, 2700000, 2700000, 3500000, 3200000, 2700000, 2700000],
+                        'kategori-5': [2500000, 3200000, 2800000, 2500000, 2500000, 3000000, 2500000, 2500000, 2700000, 2700000],
+                        'kategori-6': [2700000, 2700000, 2700000, 2700000, 3000000, 2700000, 2700000, 2700000, 2700000, 2700000],
+                        'kategori-7': [2700000, 2700000, 200000, 3200000, 3200000, 3200000, 2700000, 2800000, 3000000, 3000000]
+                    };
+
+                    return this.categories.map((cat, catIdx) => {
+                        const prices = priceMaps[cat.id] || Array(10).fill(0);
+                        return Array.from({ length: 10 }).map((_, i) => {
+                            const priceVal = prices[i] || 0;
+                            const imageNumber = (catIdx * 10) + (i + 1);
+                            return {
+                                id: `${cat.id}-${i}`,
+                                name: `Domba #${imageNumber}`,
+                                info: cat.info,
+                                price: `Rp ${priceVal.toLocaleString('id-ID')}`,
+                                image: `assets/${imageNumber}.webp`
+                            };
+                        });
+                    });
+                },
+
+                scrollToCategoryProduct(catIdx, slideIdx) {
+                    const container = this.$refs[`carousel-${catIdx}`]?.[0];
+                    if (!container) return;
+                    const cardWidth = container.firstElementChild.offsetWidth + 24;
+                    container.scrollTo({ left: slideIdx * cardWidth, behavior: 'smooth' });
+                    this.categoryActiveSlides[catIdx] = slideIdx;
+                },
+
+                activeGallerySlide: 0,
+                galleryItems: [
+                    { id: 1, title: 'Pemberian Pakan Organik', desc: 'Menjaga kualitas daging dengan pakan alami terbaik.', image: 'assets/galeri1.webp?auto=format&fit=crop&q=80&w=800' },
+                    { id: 2, title: 'Kebersihan Kandang', desc: 'Sanitasi rutin setiap pagi untuk kesehatan ternak.', image: 'assets/galeri2.webp?auto=format&fit=crop&q=80&w=800' },
+                    { id: 3, title: 'Pemeriksaan Kesehatan', desc: 'kami melakukan perawatan kondisi mata, kuku, dan gigi berkala.', image: 'assets/galeri3.webp?auto=format&fit=crop&q=80&w=800' },
+                    { id: 4, title: 'Pengiriman Jabodetabek', desc: 'Armada khusus yang menjamin hewan sampai dengan selamat.', image: 'assets/galeri4.webp?auto=format&fit=crop&q=80&w=800' },
+                    { id: 5, title: 'Suasana Farm Bogor', desc: 'Lingkungan asri pegunungan yang meminimalisir stres.', image: 'assets/galeri5.webp?auto=format&fit=crop&q=80&w=800' }
+                ],
+                scrollToGallery(index) {
+                    const container = this.$refs.carouselGallery;
+                    if (!container) return;
+                    const cardWidth = container.firstElementChild.offsetWidth + 32;
+                    container.scrollTo({ left: index * cardWidth, behavior: 'smooth' });
+                    this.activeGallerySlide = index;
+                },
+
+                orderWhatsApp(name) {
+                    const msg = encodeURIComponent(`Halo Abizar Farm, saya ingin memesan: ${name}`);
+                    window.open(`https://wa.me/${this.contactNumber}?text=${msg}`, '_blank');
+                },
+                
+                async askAi(query) {
+                    if (!query || this.isAiLoading) return;
+                    this.aiQuery = query;
+                    this.isAiLoading = true;
+                    this.aiError = '';
+                    this.aiResponse = '';
+                     
+                    try {
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: query }] }],
+                                systemInstruction: { parts: [{ text: "Anda adalah asisten ahli Qurban Islami dari Abizar Farm. Jawab singkat, santun, dan informatif dalam Bahasa Indonesia." }] }
+                            })
+                        });
+                        const data = await response.json();
+                        this.aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/\*\*/g, '') || "Maaf, saya tidak dapat menjawab saat ini.";
+                    } catch (err) {
+                        this.aiError = "Gagal memuat jawaban AI. Silakan coba lagi nanti.";
+                    } finally {
+                        this.isAiLoading = false;
+                    }
+                },
+                init() {
+                    lucide.createIcons();
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800" x-data="abizarApp()">
+
+    <!-- Modal Pratinjau Gambar -->
+    <div x-show="previewImage" 
+         x-cloak 
+         class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 md:p-8"
+         @click.away="previewImage = null"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        
+        <button @click="previewImage = null" class="absolute top-6 right-6 text-white hover:text-emerald-400 transition z-[110]">
+            <i data-lucide="x" class="w-10 h-10"></i>
+        </button>
+
+        <div class="max-w-4xl w-full flex flex-col items-center gap-4">
+            <img :src="previewImage" class="max-h-[80vh] w-auto rounded-2xl shadow-2xl object-contain border-4 border-white/10" alt="Preview Domba">
+            <p class="text-white font-medium text-lg bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm">Klik di luar atau tombol X untuk menutup</p>
+        </div>
+    </div>
+
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center gap-2">
+                        <img src="assets/logo_af.svg" alt="Logo Qurban Domba" class="h-8 w-auto">
+                    <span class="font-bold text-xl text-emerald-800 tracking-tight">Abizar Farm</span>
+                </div>
+                
+                <div class="hidden lg:flex space-x-6 items-center">
+                    <a href="#beranda" class="text-gray-600 hover:text-emerald-600 font-medium transition">Beranda</a>
+                    <a href="#keunggulan" class="text-gray-600 hover:text-emerald-600 font-medium transition">Keunggulan</a>
+                    <a href="#katalog" class="text-gray-600 hover:text-emerald-600 font-medium transition">Katalog</a>
+                    <a href="#galeri" class="text-gray-600 hover:text-emerald-600 font-medium transition">Galeri</a>
+                    <a href="#asisten-ai" class="text-gray-600 hover:text-emerald-600 font-medium flex items-center gap-1 transition">Tanya AI ✨</a>
+                    <a :href="'https://wa.me/' + contactNumber" target="_blank" class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl hover:bg-emerald-700 transition font-bold flex items-center gap-2 shadow-sm">
+                        <i data-lucide="message-circle" class="w-5 h-5"></i>
+                        Konsultasi WhatsApp
+                    </a>
+                </div>
+
+                <div class="lg:hidden flex items-center">
+                    <button @click="isMenuOpen = !isMenuOpen" class="text-gray-600 hover:text-emerald-600 focus:outline-none">
+                        <i data-lucide="menu" x-show="!isMenuOpen"></i>
+                        <i data-lucide="x" x-show="isMenuOpen" x-cloak></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div x-show="isMenuOpen" x-cloak class="lg:hidden bg-white border-t border-gray-100 p-4 shadow-lg flex flex-col p-4 space-y-4">
+            <a href="#beranda" @click="isMenuOpen = false" class="text-gray-600 font-medium">Beranda</a>
+            <a href="#keunggulan" @click="isMenuOpen = false" class="text-gray-600 font-medium">Keunggulan</a>
+            <a href="#katalog" @click="isMenuOpen = false" class="text-gray-600 font-medium">Katalog</a>
+            <a href="#galeri" @click="isMenuOpen = false" class="text-gray-600 font-medium">Galeri</a>
+            <a href="#asisten-ai" @click="isMenuOpen = false" class="text-emerald-600 font-bold italic">Tanya AI ✨</a>
+            <a :href="'https://wa.me/' + contactNumber" target="_blank" class="bg-emerald-600 text-white py-3 rounded-xl font-bold text-center">
+                Konsultasi WhatsApp
+            </a>
+        </div>
+    </nav>
+
+    <section id="beranda" class="relative hero-gradient text-white min-h-[500px] md:min-h-[600px] flex items-center">
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-left">
+            <div class="max-w-3xl">
+                <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 drop-shadow-lg leading-tight">
+                    Sempurnakan Ibadah Qurban Bersama <span class="text-emerald-400">Abizar Farm</span>
+                </h1>
+                <p class="text-lg md:text-xl text-emerald-50 mb-10 leading-relaxed font-medium drop-shadow-md max-w-2xl">
+                    Domba qurban pilihan, sehat, dan sesuai syariat. Dibesarkan dengan pakan alami di lingkungan asri pegunungan Bogor.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                    <a href="#katalog" class="bg-white text-emerald-600 px-8 py-4 rounded-xl font-bold shadow-xl hover:bg-emerald-50 transition transform hover:scale-105 active:scale-95">Lihat Katalog</a>
+                    <a :href="'https://wa.me/' + contactNumber" target="_blank" class="bg-emerald-500/90 backdrop-blur-sm text-white px-8 py-4 rounded-xl font-bold shadow-xl hover:bg-emerald-600 transition transform hover:scale-105 active:scale-95 flex items-center gap-3">
+                        <i data-lucide="message-circle" class="w-6 h-6"></i>
+                        Konsultasi WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="keunggulan" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl font-black text-gray-900 mb-12">Mengapa memilih Abizar Farm? </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="p-8 rounded-3xl bg-emerald-50 border border-emerald-100">
+                    <div class="w-16 h-16 mx-auto bg-white text-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                        <i data-lucide="shield-check" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-emerald-900">Jaminan Syariat</h3>
+                    <p class="text-gray-600 text-sm">Cukup umur, sehat, dan tanpa cacat sesuai kaidah fiqih qurban.</p>
+                </div>
+                <div class="p-8 rounded-3xl bg-emerald-50 border border-emerald-100">
+                    <div class="w-16 h-16 mx-auto bg-white text-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                        <i data-lucide="heart" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-emerald-900">Perawatan Terbaik</h3>
+                    <p class="text-gray-600 text-sm">Pakan bernutrisi tinggi dan sanitasi kandang yang selalu terjaga kebersihannya serta dilakukan secara rutin setiap hari.
+                    </p>
+                </div>
+                <div class="p-8 rounded-3xl bg-emerald-50 border border-emerald-100">
+                    <div class="w-16 h-16 mx-auto bg-white text-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                        <i data-lucide="truck" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-emerald-900">Layanan Free</h3>
+                    <p class="text-gray-600 text-sm">Gratis biaya perawatan hingga H-1 dan ongkos kirim Jabodetabek.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="katalog" class="py-20 bg-emerald-50/30 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-black text-gray-900 mb-4">Katalog Domba Qurban</h2>
+                <p class="text-gray-600">Pilih kategori domba yang sesuai dengan kebutuhan Anda.</p>
+            </div>
+
+            <div class="flex overflow-x-auto no-scrollbar gap-3 mb-10 pb-2">
+                <template x-for="(cat, idx) in categories" :key="cat.id">
+                    <button 
+                        @click="selectedCategoryIndex = idx"
+                        :class="selectedCategoryIndex === idx ? 'bg-emerald-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'"
+                        class="flex-none flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all whitespace-nowrap"
+                    >
+                        <i :data-lucide="cat.icon" class="w-4 h-4"></i>
+                        <span x-text="cat.name"></span>
+                    </button>
+                </template>
+            </div>
+
+            <template x-for="(cat, catIdx) in categories" :key="'section-'+cat.id">
+                <div x-show="selectedCategoryIndex === catIdx" x-transition class="space-y-6">
+                    <div class="flex justify-between items-center px-2">
+                        <div>
+                            <h3 class="text-2xl font-black text-emerald-800" x-text="cat.name"></h3>
+                            <p class="text-sm text-emerald-600 font-medium" x-text="cat.info"></p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="scrollToCategoryProduct(catIdx, categoryActiveSlides[catIdx] - 1)" :disabled="categoryActiveSlides[catIdx] <= 0" class="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-emerald-600 disabled:opacity-30">
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                            </button>
+                            <button @click="scrollToCategoryProduct(catIdx, categoryActiveSlides[catIdx] + 1)" :disabled="categoryActiveSlides[catIdx] >= 9" class="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-emerald-600 disabled:opacity-30">
+                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <div :x-ref="'carousel-'+catIdx" class="flex gap-6 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-6 scroll-smooth">
+                            <template x-for="(product, pIdx) in categorizedProducts[catIdx]" :key="product.id">
+                                <div class="flex-none w-[280px] md:w-[320px] snap-start">
+                                    <div class="bg-white rounded-[2rem] border border-gray-100 shadow-lg overflow-hidden group">
+                                        <!-- Klik Gambar untuk Preview -->
+                                        <div class="aspect-square overflow-hidden relative cursor-zoom-in" @click="previewImage = product.image">
+                                            <img :src="product.image" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" :alt="product.name" onerror="this.src='https://images.unsplash.com/photo-1511117833450?auto=format&fit=crop&q=80&w=600'">
+                                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center transition-all duration-300">
+                                                <i data-lucide="maximize-2" class="text-white opacity-0 group-hover:opacity-100 w-8 h-8 translate-y-4 group-hover:translate-y-0 transition-all"></i>
+                                            </div>
+                                            <div class="absolute top-4 left-4 bg-emerald-600 text-white text-[10px] px-2 py-1 rounded-full font-bold" x-text="cat.name"></div>
+                                        </div>
+                                        <div class="p-6">
+                                            <h4 class="text-lg font-bold text-gray-900 mb-2" x-text="product.name"></h4>
+                                            <p class="text-xs text-gray-500 mb-4" x-text="product.info"></p>
+                                            <div class="flex justify-center items-center mb-6">
+                                                <span class="text-emerald-600 font-black text-xl" x-text="product.price"></span>
+                                            </div>
+                                            <button @click="orderWhatsApp(product.name)" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition flex items-center justify-center gap-2">
+                                                <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                                                Pesan Sekarang
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </section>
+
+    <section id="galeri" class="py-20 bg-white overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-end mb-10">
+                <div class="text-left">
+                    <h2 class="text-3xl font-black text-gray-900 mb-2">Galeri Aktivitas</h2>
+                    <p class="text-gray-600 text-sm">Dokumentasi harian peternakan kami.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button @click="scrollToGallery(activeGallerySlide - 1)" :disabled="activeGallerySlide <= 0" class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center disabled:opacity-30">
+                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                    </button>
+                    <button @click="scrollToGallery(activeGallerySlide + 1)" :disabled="activeGallerySlide >= galleryItems.length - 1" class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center disabled:opacity-30">
+                        <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div x-ref="carouselGallery" class="flex gap-6 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth">
+                <template x-for="(item, index) in galleryItems" :key="item.id">
+                    <div class="flex-none w-[300px] md:w-[450px] snap-start">
+                        <div class="relative rounded-3xl overflow-hidden aspect-[4/3] shadow-lg cursor-zoom-in" @click="previewImage = item.image">
+                            <img :src="item.image" class="w-full h-full object-cover" :alt="item.title">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent p-6 flex flex-col justify-end">
+                                <h3 class="text-white font-bold text-lg" x-text="item.title"></h3>
+                                <p class="text-white/80 text-xs" x-text="item.desc"></p>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </section>
+
+    <section id="asisten-ai" class="py-20 bg-gray-50">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <div class="bg-emerald-700 rounded-[2.5rem] p-8 md:p-12 shadow-2xl text-white">
+                <i data-lucide="sparkles" class="w-12 h-12 mx-auto mb-6 text-emerald-300"></i>
+                <h2 class="text-2xl md:text-3xl font-black mb-4">Tanya Asisten Abizar ✨</h2>
+                <p class="text-emerald-100 mb-8">Butuh info syarat sah qurban atau tips memilih domba? Tanyakan langsung.</p>
+                
+                <div class="flex flex-col gap-4 max-w-lg mx-auto">
+                    <div class="bg-white rounded-2xl p-2 flex gap-2 shadow-inner">
+                        <input type="text" x-model="aiQuery" @keydown.enter="askAi(aiQuery)" placeholder="Ketik pertanyaan Anda..." class="flex-1 bg-transparent border-none text-gray-800 px-4 py-3 focus:ring-0 outline-none">
+                    </div>
+                    
+                    <button @click="askAi(aiQuery)" :disabled="isAiLoading" class="w-full bg-emerald-500 hover:bg-emerald-400 text-white py-4 rounded-2xl font-black shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3">
+                        <i data-lucide="send" class="w-5 h-5" x-show="!isAiLoading"></i>
+                        <i data-lucide="loader-2" class="w-5 h-5 animate-spin" x-show="isAiLoading"></i>
+                        <span x-text="isAiLoading ? 'Sedang Berpikir...' : 'Kirim Pertanyaan'"></span>
+                    </button>
+                </div>
+
+                <div x-show="aiResponse" class="mt-8 bg-white/10 rounded-2xl p-6 text-left text-sm leading-relaxed border border-white/10" x-transition>
+                    <p x-text="aiResponse"></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-gray-900 text-white pt-20 pb-10">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
+                <div>
+                    <div class="flex items-center gap-2 mb-6">
+                            <img src="assets/logo_af.svg" alt="Logo Qurban Domba" class="h-8 w-auto">
+                        
+                        <span class="font-bold text-2xl">Abizar Farm</span>
+                    </div>
+                    <p class="text-gray-400 max-w-sm">Mendedikasikan diri untuk menyediakan hewan qurban terbaik dengan proses yang amanah bagi kaum muslimin.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-lg mb-6 text-emerald-400">Kontak Kami</h4>
+                    <div class="space-y-4 text-gray-400">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="map-pin" class="w-5 h-5 text-emerald-500"></i>
+                            <p>Jl. Gunung Picung, Pamijahan, Kab. Bogor</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="phone" class="w-5 h-5 text-emerald-500"></i>
+                            <p>0881 7891 076</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 text-center text-gray-500 text-xs">
+                <p>&copy; 2024 <span class="text-emerald-500 font-bold">Abizar Farm</span> Semoga berkah untuk kita semua.</p>
+            </div>
+        </div>
+    </footer>
+
+    <a :href="'https://wa.me/' + contactNumber" target="_blank" class="fixed bottom-8 right-8 bg-emerald-500 text-white p-4 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all z-[60] flex items-center justify-center group">
+        <i data-lucide="message-circle" class="w-8 h-8 group-hover:rotate-12 transition-transform"></i>
+        <span class="absolute right-full mr-4 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">Hubungi Kami</span>
+    </a>
+
+</body>
+</html>
